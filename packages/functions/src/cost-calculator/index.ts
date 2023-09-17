@@ -1,31 +1,86 @@
-import * as schema from "src/db/schema";
-
-type Session = typeof schema.sessions.$inferSelect;
-type EnergyReading = typeof schema.energyReadings.$inferSelect;
-type RatePricingElementComponents =
-  typeof schema.ratePricingElementComponents.$inferSelect;
-type RatePricingElementRestrictions =
-  typeof schema.ratePricingElementRestrictions.$inferSelect;
-type RatePricingElement = typeof schema.ratePricingElements.$inferSelect & {
-  components: RatePricingElementComponents[];
-  restrictions?: RatePricingElementRestrictions;
+export type Session = {
+  id: string;
+  cost: number;
+  rateId: string;
+  startTime: Date;
+  endTime: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
-type Rate = typeof schema.rates.$inferSelect & {
+
+export type Rate = {
+  id: string;
+  minCost: number | null;
+  maxCost: number | null;
   pricingElements: RatePricingElement[];
 };
 
-interface CostCalculator {
-  calculate: (
-    session: Session,
-    rate: Rate,
-    energyReadings: EnergyReading[]
-  ) => number;
-}
+export type RatePricingElement = {
+  id: string;
+  rateId: string;
+  components: RatePricingElementComponent[];
+};
 
-class EnergyCostCalculator implements CostCalculator {
-  constructor() {}
+export type RatePricingElementComponent = {
+  id: string;
+  ratePricingElementId: string;
+  type: "energy" | "flat" | "idle" | "time";
+};
 
-  calculate(session: Session, rate: Rate, energyReadings: EnergyReading[]) {
-    return 0;
+export type EnergyReading = {
+  id: string;
+  sessionId: string;
+  value: number;
+  timestamp: Date;
+};
+
+export type ConnectorStatusEvent = {
+  id: string;
+  sessionId: string;
+  status: "charging" | "idle";
+  timestamp: Date;
+};
+
+export type CostCalculator = (
+  session: Session,
+  rate: Rate,
+  energyReadings: EnergyReading[]
+) => number;
+
+export type SessionInterval = {
+  sessionId: string;
+  type: "charging" | "idle";
+  energyConsumed: number;
+  startTime: Date;
+  endTime: Date;
+};
+
+export function getSessionIntervals(
+  energyReadings: EnergyReading[],
+  connectorStatusEvents: ConnectorStatusEvent[]
+): SessionInterval[] {
+  if (energyReadings.length === 0 || connectorStatusEvents.length === 0) {
+    return [];
   }
+
+  const chargingIntervals: SessionInterval[] = [];
+
+  for (let i = 0; i < energyReadings.length; i++) {
+    if (i === energyReadings.length - 1) continue; // we can't compare the last reading to the next reading
+
+    const currentReading = energyReadings[i];
+    const nextReading = energyReadings[i + 1];
+
+    if (currentReading.value < nextReading.value) {
+      chargingIntervals.push({
+        sessionId: currentReading.sessionId,
+        type: "charging",
+        energyConsumed: nextReading.value - currentReading.value,
+        startTime: currentReading.timestamp,
+        endTime: nextReading.timestamp,
+      });
+    }
+  }
+
+  return chargingIntervals;
 }
