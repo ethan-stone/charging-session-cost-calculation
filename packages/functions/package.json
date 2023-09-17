@@ -7,9 +7,14 @@
     "typecheck": "tsc -noEmit"
   },
   "devDependencies": {
-    "@types/node": "^20.6.2",
     "@types/aws-lambda": "^8.10.121",
-    "vitest": "^0.34.4",
-    "sst": "^2.25.2"
+    "@types/node": "^20.6.2",
+    "drizzle-kit": "^0.19.13",
+    "sst": "^2.25.2",
+    "vitest": "^0.34.4"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.28.6",
+    "mysql2": "^3.6.1"
   }
 }
