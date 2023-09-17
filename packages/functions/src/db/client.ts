@@ -1,6 +1,5 @@
 import { drizzle } from "drizzle-orm/planetscale-serverless";
 import * as schema from "./schema";
-export { PlanetScaleDatabase } from "drizzle-orm/planetscale-serverless";
 import mysql from "mysql2/promise";
 
 // create the connection

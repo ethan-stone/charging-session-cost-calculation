@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.28.6",
-    "mysql2": "^3.6.1"
+    "mysql2": "^3.6.1",
+    "ulid": "^2.3.0"
   }
 }

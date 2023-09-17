@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  double,
   index,
   int,
   mysqlEnum,
@@ -13,6 +14,8 @@ export const sessions = mysqlTable(
   {
     id: varchar("id", { length: 36 }).primaryKey(),
     cost: int("cost").notNull(),
+    startTime: timestamp("start_time").notNull(),
+    endTime: timestamp("end_time").notNull(),
     createdAt: timestamp("created_at")
       .notNull()
       .$defaultFn(() => new Date()),
@@ -27,6 +30,13 @@ export const sessions = mysqlTable(
     };
   }
 );
+
+export const energyReadings = mysqlTable("energy_readings", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  sessionId: varchar("session_id", { length: 36 }).notNull(),
+  value: double("value").notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+});
 
 export const rates = mysqlTable("rates", {
   id: varchar("id", { length: 36 }).primaryKey(),
@@ -62,6 +72,21 @@ export const ratePricingElementRestrictions = mysqlTable(
 );
 
 // relations
+export const sessionsRelations = relations(sessions, ({ one, many }) => {
+  return {
+    energyReadings: many(energyReadings),
+  };
+});
+
+export const energyReadingsRelations = relations(energyReadings, ({ one }) => {
+  return {
+    session: one(sessions, {
+      fields: [energyReadings.sessionId],
+      references: [sessions.id],
+    }),
+  };
+});
+
 export const ratesRelations = relations(rates, ({ many }) => {
   return {
     pricingElements: many(ratePricingElements),
