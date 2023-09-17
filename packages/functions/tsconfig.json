@@ -4,8 +4,6 @@
     "module": "esnext",
     "moduleResolution": "node",
     "baseUrl": ".",
-    "paths": {
-      "@charging-session-cost-calculation/core/*": ["../core/src/*"]
-    }
+    "paths": {}
   }
 }
