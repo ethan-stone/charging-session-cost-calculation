@@ -13,9 +13,12 @@ export const sessions = mysqlTable(
   "sessions",
   {
     id: varchar("id", { length: 36 }).primaryKey(),
-    cost: int("cost").notNull(),
-    startTime: timestamp("start_time").notNull(),
-    endTime: timestamp("end_time").notNull(),
+    cost: int("cost"),
+    rateId: varchar("rate_id", { length: 36 }).notNull(),
+    startTime: timestamp("start_time")
+      .notNull()
+      .$defaultFn(() => new Date()),
+    endTime: timestamp("end_time"),
     createdAt: timestamp("created_at")
       .notNull()
       .$defaultFn(() => new Date()),
@@ -75,6 +78,10 @@ export const ratePricingElementRestrictions = mysqlTable(
 export const sessionsRelations = relations(sessions, ({ one, many }) => {
   return {
     energyReadings: many(energyReadings),
+    rate: one(rates, {
+      fields: [sessions.rateId],
+      references: [rates.id],
+    }),
   };
 });
 

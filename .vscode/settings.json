@@ -1,5 +1,21 @@
 {
   "search.exclude": {
     "**/.sst": true
-  }
+  },
+  "sqltools.connections": [
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 3306,
+      "driver": "MySQL",
+      "name": "charging_session_cost_calculation",
+      "database": "charging_session_cost_calculation",
+      "username": "root",
+      "askForPassword": true
+    }
+  ]
 }
