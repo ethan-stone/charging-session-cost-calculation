@@ -3,7 +3,7 @@ import {
   SessionInterval,
   getSessionChargingIntervals,
   getSessionIdleIntervals,
-  sliceSessionIntervalsPerSecond,
+  interpolateSessionIntervalsPerSecond,
 } from "./session-interval";
 import { ConnectorStatusEvent, EnergyReading } from "./types";
 
@@ -201,5 +201,42 @@ describe("getSessionIdleIntervals", () => {
 });
 
 describe("sliceSessionIntervalsPerSecond", () => {
-  it.todo("slice intervals correctly", () => {});
+  it.todo("slice intervals correctly", () => {
+    const startTime = new Date("2021-01-01T00:00:00.000Z");
+
+    const sessionIntervals: SessionInterval[] = [
+      {
+        sessionId: "1",
+        type: "charging",
+        energyConsumed: 100,
+        startTime: new Date(startTime.getTime() + 1000 * 60),
+        endTime: new Date(startTime.getTime() + 1000 * 60 * 2),
+        startEnergy: 100,
+        endEnergy: 200,
+      },
+      {
+        sessionId: "1",
+        type: "charging",
+        energyConsumed: 100,
+        startTime: new Date(startTime.getTime() + 1000 * 60 * 2),
+        endTime: new Date(startTime.getTime() + 1000 * 60 * 3),
+        startEnergy: 200,
+        endEnergy: 300,
+      },
+      {
+        sessionId: "1",
+        type: "charging",
+        energyConsumed: 100,
+        startTime: new Date(startTime.getTime() + 1000 * 60 * 4),
+        endTime: new Date(startTime.getTime() + 1000 * 60 * 5),
+        startEnergy: 300,
+        endEnergy: 400,
+      },
+    ];
+
+    const interpolatedSessionIntervals =
+      interpolateSessionIntervalsPerSecond(sessionIntervals);
+
+    expect(0).toEqual(0);
+  });
 });

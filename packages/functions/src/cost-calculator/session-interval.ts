@@ -96,8 +96,47 @@ export const getSessionIdleIntervals: GetSessionIntervals = (
   return idleIntervals;
 };
 
-export function sliceSessionIntervalsPerSecond(
+function lerp(start: number, end: number, t: number): number {
+  return start * (1 - t) + end * t;
+}
+
+export function interpolateSessionIntervalsPerSecond(
   sessionIntervals: SessionInterval[]
 ): SessionInterval[] {
-  return [];
+  const interpolatedSessionIntervals: SessionInterval[] = [];
+
+  for (let i = 0; i < sessionIntervals.length; i++) {
+    const interval = sessionIntervals[i];
+
+    const diffInSeconds =
+      (interval.endTime.getTime() - interval.startTime.getTime()) / 1000;
+
+    const t = 1 / diffInSeconds;
+
+    for (let j = 0; j < diffInSeconds; j++) {
+      const newStartEnergy = lerp(
+        interval.startEnergy,
+        interval.endEnergy,
+        j * t
+      );
+
+      const newEndEnergy = lerp(
+        interval.startEnergy,
+        interval.endEnergy,
+        (j + 1) * t
+      );
+
+      interpolatedSessionIntervals.push({
+        sessionId: interval.sessionId,
+        type: interval.type,
+        energyConsumed: newEndEnergy - newStartEnergy,
+        startEnergy: newStartEnergy,
+        endEnergy: newEndEnergy,
+        startTime: new Date(interval.startTime.getTime() + j * 1000),
+        endTime: new Date(interval.startTime.getTime() + (j + 1) * 1000),
+      });
+    }
+  }
+
+  return interpolatedSessionIntervals;
 }
