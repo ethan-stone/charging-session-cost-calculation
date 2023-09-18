@@ -73,8 +73,6 @@ function isValidStartTime(
   const hour = day.hour();
   const minute = day.minute();
 
-  console.log({ hour, minute });
-
   const [validStartHour, validStartMinute] = validStartTime.split(":");
   const validStartHourNumber = parseInt(validStartHour);
   const validStartMinuteNumber = parseInt(validStartMinute);
