@@ -10,9 +10,14 @@ The general idea is as follows:
 
 Given a Session, EnergyReadings, and ConnectorStatusEvents, we can find a collection of SessionIntervals. There are two types of intervals, "charging" and "idle".
 
-An interval contains a start time and an end time as well as a start energy and end energy. The time between start time and end time can be anything from a few seconds to a few hours. The energy between start energy and end energy can be anything from a few kWh to a few MWh. To get precision we interpolate energy readings per second.
+An interval contains a start time and an end time as well as a start energy and end energy. The time between start time and end time can be anything from a few seconds to a few hours. The energy between start energy and end energy can be anything from a few kWh to a few MWh.
 
-For example is we have a session interval with a start time of 0 seconds and an end time of 5 seconds, with a start energy of 0kWh and end energy of 5kWh, we would interpolate 5 energy readings, one for each second.
+We then go into a validation stage for each interval. Right now there are only checks for charging intervals. The checks are as follows:
+
+1. Check if energy consumed in the last interval is greater than the theoretical maximum energy that could be consumed in the interval time. This check accounts for the a session being ended with a reason of PowerLoss which frequently causes the final energy reading to spike. If the last interval is above the theoretical max we remove it from the list of intervals.
+2. Check the remaining intervals if the energy consumed is greater than the theoretical maximum energy that could be consumed in the interval time. If the interval is above the theoretical max then we can't trust the hardware and throw an error
+
+To get precision we then interpolate energy readings per second. For example is we have a session interval with a start time of 0 seconds and an end time of 5 seconds, with a start energy of 0kWh and end energy of 5kWh, we would interpolate 5 energy readings, one for each second.
 
 The first would have a start time of 0 seconds and end time of 1 second with a start energy of 0kWh and an end energy of 1kWh. The second would have a start time of 1 second and end time of 2 seconds with a start energy of 1kWh and an end energy of 2kWh. And so on.
 
