@@ -95,3 +95,9 @@ export const getSessionIdleIntervals: GetSessionIntervals = (
 
   return idleIntervals;
 };
+
+export function sliceSessionIntervalsPerSecond(
+  sessionIntervals: SessionInterval[]
+): SessionInterval[] {
+  return [];
+}

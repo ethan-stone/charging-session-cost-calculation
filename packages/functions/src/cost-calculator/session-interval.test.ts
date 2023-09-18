@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  SessionInterval,
   getSessionChargingIntervals,
   getSessionIdleIntervals,
+  sliceSessionIntervalsPerSecond,
 } from "./session-interval";
 import { ConnectorStatusEvent, EnergyReading } from "./types";
 
@@ -196,4 +198,8 @@ describe("getSessionIdleIntervals", () => {
       },
     ]);
   });
+});
+
+describe("sliceSessionIntervalsPerSecond", () => {
+  it.todo("slice intervals correctly", () => {});
 });
