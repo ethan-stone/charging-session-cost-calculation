@@ -9,6 +9,7 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.121",
     "@types/node": "^20.6.2",
+    "@vitest/coverage-v8": "^0.34.4",
     "drizzle-kit": "^0.19.13",
     "sst": "^2.25.2",
     "ts-node": "^10.9.1",

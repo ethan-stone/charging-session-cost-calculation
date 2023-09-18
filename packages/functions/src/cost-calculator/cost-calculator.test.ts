@@ -1,81 +1,163 @@
 import { describe, it, expect } from "vitest";
-import { Rate, Session } from "./types";
-import { SessionInterval } from "./session-interval";
-import { getPricingElementIdx } from "./cost-calculator";
 
-describe("getPricingElementIdx tests", () => {
-  it("should return first pricing element if no restrictions exist", () => {
-    const startTime = new Date("2021-01-01T00:00:00.000Z");
+import { isValidPricingElement } from "./cost-calculator";
 
-    const session = {
-      id: "1",
-      cost: 0,
-      createdAt: new Date(),
-      endTime: new Date(),
-      rateId: "1",
-      startTime: new Date(),
+describe("isValidPricingElement tests", () => {
+  it("should return true if restrictions is empty object", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z");
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {},
       timezone: "America/Los_Angeles",
-      updatedAt: new Date(),
-    } satisfies Session;
+    });
 
-    const rate = {
-      id: "1",
-      maxCost: 100,
-      minCost: 0,
-      pricingElements: [
-        {
-          id: "1",
-          rateId: "1",
-          restrictions: {},
-          components: [
-            {
-              id: "1",
-              type: "energy",
-              ratePricingElementId: "1",
-              value: 10,
-            },
-          ],
-        },
-      ],
-    } satisfies Rate;
+    expect(isValid).toBeTruthy();
+  });
 
-    const sessionIntervals: SessionInterval[] = [
-      {
-        sessionId: "1",
-        type: "charging",
-        energyConsumed: 100,
-        startTime: new Date(startTime.getTime() + 1000 * 60),
-        endTime: new Date(startTime.getTime() + 1000 * 60 * 2),
-        startEnergy: 100,
-        endEnergy: 200,
+  it("should return false if date is before start date", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z");
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {
+        startDate: "2021-01-02",
       },
-      {
-        sessionId: "1",
-        type: "charging",
-        energyConsumed: 100,
-        startTime: new Date(startTime.getTime() + 1000 * 60 * 2),
-        endTime: new Date(startTime.getTime() + 1000 * 60 * 3),
-        startEnergy: 200,
-        endEnergy: 300,
-      },
-      {
-        sessionId: "1",
-        type: "charging",
-        energyConsumed: 100,
-        startTime: new Date(startTime.getTime() + 1000 * 60 * 4),
-        endTime: new Date(startTime.getTime() + 1000 * 60 * 5),
-        startEnergy: 300,
-        endEnergy: 400,
-      },
-    ];
+      timezone: "America/Los_Angeles",
+    });
 
-    const pricingElementIdx = getPricingElementIdx(
-      session,
-      rate,
-      sessionIntervals[0],
-      sessionIntervals
-    );
+    expect(isValid).toBeFalsy();
+  });
 
-    expect(pricingElementIdx).toEqual(0);
+  it("should return false if date is after end date", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z");
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {
+        endDate: "2020-12-31",
+      },
+      timezone: "America/Los_Angeles",
+    });
+
+    expect(isValid).toBeFalsy();
+  });
+
+  it("should return false if duration is less than min duration", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z");
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {
+        minDuration: 200,
+      },
+      timezone: "America/Los_Angeles",
+    });
+
+    expect(isValid).toBeFalsy();
+  });
+
+  it("should return false if duration is greater than max duration", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z");
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {
+        maxDuration: 50,
+      },
+      timezone: "America/Los_Angeles",
+    });
+
+    expect(isValid).toBeFalsy();
+  });
+
+  it("should return false if date time is less than start time", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z"); // this is 04:00 in Los Angeles
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {
+        startTime: "05:00",
+      },
+      timezone: "America/Los_Angeles",
+    });
+
+    expect(isValid).toBeFalsy();
+  });
+
+  it("should return false if date time is greater than end time", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z"); // this is 04:00 in Los Angeles
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {
+        endTime: "03:00",
+      },
+      timezone: "America/Los_Angeles",
+    });
+
+    expect(isValid).toBeFalsy();
+  });
+
+  it("should return false if energyConsumed is less than min kWh", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z");
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {
+        minKwh: 200,
+      },
+      timezone: "America/Los_Angeles",
+    });
+
+    expect(isValid).toBeFalsy();
+  });
+
+  it("should return false if energyConsumed is greater than max kWh", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z");
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {
+        maxKwh: 50,
+      },
+      timezone: "America/Los_Angeles",
+    });
+
+    expect(isValid).toBeFalsy();
+  });
+
+  it("should return false duration date is wrong day of week", () => {
+    const date = new Date("2021-01-01T12:00:00.000Z"); // this is a friday
+
+    const isValid = isValidPricingElement({
+      date: date,
+      duration: 100,
+      energyConsumed: 100,
+      restrictions: {
+        dayOfWeek: ["MONDAY"],
+      },
+      timezone: "America/Los_Angeles",
+    });
+
+    expect(isValid).toBeFalsy();
   });
 });
