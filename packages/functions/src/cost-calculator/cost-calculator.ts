@@ -255,7 +255,7 @@ export function getPricingElementIdx(
         currentSessionInterval.endTime.getTime() / 1000 -
         firstSessionInterval.startTime.getTime() / 1000,
       energyConsumed:
-        currentSessionInterval.startEnergy - firstSessionInterval.startEnergy,
+        currentSessionInterval.endEnergy - firstSessionInterval.startEnergy,
       restrictions,
       timezone: session.timezone,
     });
