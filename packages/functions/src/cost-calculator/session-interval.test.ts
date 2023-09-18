@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getSessionChargingIntervals,
   getSessionIdleIntervals,
-} from "./session-intervals";
+} from "./session-interval";
 import { ConnectorStatusEvent, EnergyReading } from "./types";
 
 describe("getSessionChargingIntervals tests", () => {
@@ -69,6 +69,8 @@ describe("getSessionChargingIntervals tests", () => {
         energyConsumed: 100,
         startTime: new Date(startTime.getTime() + 1000 * 60),
         endTime: new Date(startTime.getTime() + 1000 * 60 * 2),
+        startEnergy: 100,
+        endEnergy: 200,
       },
       {
         sessionId: "1",
@@ -76,6 +78,8 @@ describe("getSessionChargingIntervals tests", () => {
         energyConsumed: 100,
         startTime: new Date(startTime.getTime() + 1000 * 60 * 2),
         endTime: new Date(startTime.getTime() + 1000 * 60 * 3),
+        startEnergy: 200,
+        endEnergy: 300,
       },
       {
         sessionId: "1",
@@ -83,6 +87,8 @@ describe("getSessionChargingIntervals tests", () => {
         energyConsumed: 100,
         startTime: new Date(startTime.getTime() + 1000 * 60 * 4),
         endTime: new Date(startTime.getTime() + 1000 * 60 * 5),
+        startEnergy: 300,
+        endEnergy: 400,
       },
     ]);
   });
@@ -176,6 +182,8 @@ describe("getSessionIdleIntervals", () => {
         energyConsumed: 0,
         startTime: new Date(startTime.getTime() + 1000 * 60 * 3),
         endTime: new Date(startTime.getTime() + 1000 * 60 * 4),
+        startEnergy: 300,
+        endEnergy: 300,
       },
       {
         sessionId: "1",
@@ -183,6 +191,8 @@ describe("getSessionIdleIntervals", () => {
         energyConsumed: 0,
         startTime: new Date(startTime.getTime() + 1000 * 60 * 5),
         endTime: new Date(startTime.getTime() + 1000 * 60 * 6),
+        startEnergy: 400,
+        endEnergy: 400,
       },
     ]);
   });

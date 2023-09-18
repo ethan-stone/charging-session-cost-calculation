@@ -42,6 +42,9 @@ importers:
 
   packages/functions:
     dependencies:
+      dayjs:
+        specifier: ^1.11.9
+        version: 1.11.9
       drizzle-orm:
         specifier: ^0.28.6
         version: 0.28.6(@aws-sdk/client-rds-data@3.414.0)(kysely@0.25.0)(mysql2@3.6.1)
@@ -3540,6 +3543,10 @@ packages:
       es5-ext: 0.10.62
       type: 1.2.0
     dev: true
+
+  /dayjs@1.11.9:
+    resolution: {integrity: sha512-QvzAURSbQ0pKdIye2txOzNaHmxtUBXerpY0FJsFXUMKbIZeFm5ht1LS/jFsrncjnmtv8HsG0W2g6c0zUjZWmpA==}
+    dev: false
 
   /debounce-fn@4.0.0:
     resolution: {integrity: sha512-8pYCQiL9Xdcg0UPSD3d+0KMlOjp+KGU5EPwYddgzQ7DATsg4fuUDjQtsYLmWjnk2obnNHgV3vE2Y4jejSOJVBQ==}

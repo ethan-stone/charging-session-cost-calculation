@@ -1,11 +1,279 @@
-import { SessionInterval } from "./session-intervals";
-import { Rate, Session } from "./types";
+import { SessionInterval } from "./session-interval";
+import {
+  Rate,
+  RatePricingElement,
+  RatePricingElementRestrictions,
+  Session,
+} from "./types";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import dayjs from "dayjs";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export type CostCalculator = (
   session: Session,
   rate: Rate,
   sessionIntervals: SessionInterval[]
 ) => number;
+
+const DayOfWeekToNumber = {
+  SUNDAY: 0,
+  MONDAY: 1,
+  TUESDAY: 2,
+  WEDNESDAY: 3,
+  THURSDAY: 4,
+  FRIDAY: 5,
+  SATURDAY: 6,
+};
+
+function isValidDayOfWeek(
+  date: Date,
+  timezone: string,
+  validDaysOfWeeks: (
+    | "MONDAY"
+    | "TUESDAY"
+    | "WEDNESDAY"
+    | "THURSDAY"
+    | "FRIDAY"
+    | "SATURDAY"
+    | "SUNDAY"
+  )[]
+): boolean {
+  const day = dayjs(date).tz(timezone).day();
+
+  return validDaysOfWeeks.some(
+    (dayString) => DayOfWeekToNumber[dayString] === day
+  );
+}
+
+function isValidStartDate(date: Date, validStartDate: Date): boolean {
+  return dayjs(date).isAfter(validStartDate);
+}
+
+function isValidEndDate(date: Date, validEndDate: Date): boolean {
+  return dayjs(date).isBefore(validEndDate);
+}
+
+/**
+ *  Checks if the time in the date is after the validStartTime.
+ *  Valid start time is in the format HH:mm
+ * @param {Date} date the date to check
+ * @param {string} timezone the timezone of the date
+ * @param {string} validStartTime the valid start time in the format HH:mm
+ */
+function isValidStartTime(
+  date: Date,
+  timezone: string,
+  validStartTime: string
+): boolean {
+  const day = dayjs(date).tz(timezone);
+
+  const hour = day.hour();
+  const minute = day.minute();
+
+  const [validStartHour, validStartMinute] = validStartTime.split(":");
+  const validStartHourNumber = parseInt(validStartHour);
+  const validStartMinuteNumber = parseInt(validStartMinute);
+
+  const timeInMinutes = hour * 60 + minute;
+  const validTimeInMinutes = validStartHourNumber * 60 + validStartMinuteNumber;
+
+  return timeInMinutes >= validTimeInMinutes;
+}
+
+/**
+ *  Checks if the time in the date is before the validEndTime.
+ *  Valid end time is in the format HH:mm
+ * @param {Date} date the date to check
+ * @param {string} timezone the timezone of the date
+ * @param {string} validEndTime the valid start time in the format HH:mm
+ */
+function isValidEndTime(
+  date: Date,
+  timezone: string,
+  validEndTime: string
+): boolean {
+  const day = dayjs(date).tz(timezone);
+
+  const hour = day.hour();
+  const minute = day.minute();
+
+  const [validEndHour, validEndMinute] = validEndTime.split(":");
+  const validEndHourNumber = parseInt(validEndHour);
+  const validEndMinuteNumber = parseInt(validEndMinute);
+
+  const timeInMinutes = hour * 60 + minute;
+  const validTimeInMinutes = validEndHourNumber * 60 + validEndMinuteNumber;
+
+  return timeInMinutes <= validTimeInMinutes;
+}
+
+/**
+ * Checks if the time between the startDate and endDate is greater than the minDuration
+ * @param startDate
+ * @param endDate
+ * @param minDuration the minimum duration in seconds
+ */
+function isValidMinDuration(duration: number, minDuration: number) {
+  return duration >= minDuration;
+}
+
+/**
+ * Checks if the time between the startDate and endDate is less than the maxDuration
+ * @param startDate
+ * @param endDate
+ * @param maxDuration the maximum duration in seconds
+ */
+function isValidMaxDuration(duration: number, maxDuration: number) {
+  return duration <= maxDuration;
+}
+
+function isValidMinKwh(energyConsumed: number, minKwh: number) {
+  return energyConsumed >= minKwh;
+}
+
+function isValidMaxKwh(energyConsumed: number, maxKwh: number) {
+  return energyConsumed <= maxKwh;
+}
+
+function isValidPricingElement({
+  restrictions,
+  timezone,
+  date,
+  duration,
+  energyConsumed,
+}: {
+  restrictions: RatePricingElementRestrictions;
+  timezone: string;
+  date: Date;
+  energyConsumed: number;
+  duration: number;
+}) {
+  if (
+    restrictions.dayOfWeek !== undefined &&
+    !isValidDayOfWeek(date, timezone, restrictions.dayOfWeek)
+  ) {
+    return false;
+  }
+
+  if (
+    restrictions.startDate !== undefined &&
+    !isValidStartDate(date, new Date(restrictions.startDate))
+  ) {
+    return false;
+  }
+
+  if (
+    restrictions.endDate !== undefined &&
+    !isValidEndDate(date, new Date(restrictions.endDate))
+  ) {
+    return false;
+  }
+
+  if (
+    restrictions.startTime !== undefined &&
+    !isValidStartTime(date, timezone, restrictions.startTime)
+  ) {
+    return false;
+  }
+
+  if (
+    restrictions.endTime !== undefined &&
+    !isValidEndTime(date, timezone, restrictions.endTime)
+  ) {
+    return false;
+  }
+
+  if (
+    restrictions.minDuration !== undefined &&
+    !isValidMinDuration(duration, restrictions.minDuration)
+  ) {
+    return false;
+  }
+
+  if (
+    restrictions.maxDuration !== undefined &&
+    !isValidMaxDuration(duration, restrictions.maxDuration)
+  ) {
+    return false;
+  }
+
+  if (
+    restrictions.minKwh !== undefined &&
+    !isValidMinKwh(energyConsumed, restrictions.minKwh)
+  ) {
+    return false;
+  }
+
+  if (
+    restrictions.maxKwh !== undefined &&
+    !isValidMaxKwh(energyConsumed, restrictions.maxKwh)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+export function getPricingElementIdx(
+  session: Session,
+  rate: Rate,
+  currentSessionInterval: SessionInterval,
+  sessionIntervals: SessionInterval[]
+): number | undefined {
+  if (sessionIntervals.length === 0) return undefined;
+
+  const firstSessionInterval = sessionIntervals[0];
+
+  let intervalStartPricingElementIdx: number | undefined;
+  let intervalEndPricingElementIdx: number | undefined;
+
+  for (let i = 0; i < rate.pricingElements.length; i++) {
+    const pricingElement = rate.pricingElements[i];
+
+    const restrictions = pricingElement.restrictions;
+
+    const isValidPricingElementForIntervalStart = isValidPricingElement({
+      date: currentSessionInterval.startTime,
+      duration:
+        currentSessionInterval.startTime.getTime() / 1000 -
+        firstSessionInterval.startTime.getTime() / 1000,
+      energyConsumed:
+        currentSessionInterval.startEnergy - firstSessionInterval.startEnergy,
+      restrictions,
+      timezone: session.timezone,
+    });
+
+    if (isValidPricingElementForIntervalStart)
+      intervalStartPricingElementIdx = i;
+
+    const isValidPricingElementForIntervalEnd = isValidPricingElement({
+      date: currentSessionInterval.endTime,
+      duration:
+        currentSessionInterval.endTime.getTime() / 1000 -
+        firstSessionInterval.startTime.getTime() / 1000,
+      energyConsumed:
+        currentSessionInterval.startEnergy - firstSessionInterval.startEnergy,
+      restrictions,
+      timezone: session.timezone,
+    });
+
+    if (isValidPricingElementForIntervalEnd) intervalEndPricingElementIdx = i;
+  }
+
+  if (
+    intervalStartPricingElementIdx === undefined ||
+    intervalEndPricingElementIdx === undefined
+  )
+    return undefined;
+
+  if (intervalStartPricingElementIdx !== intervalEndPricingElementIdx)
+    return undefined;
+
+  return intervalStartPricingElementIdx;
+}
 
 export const energyCostCalculator: CostCalculator = (
   session,

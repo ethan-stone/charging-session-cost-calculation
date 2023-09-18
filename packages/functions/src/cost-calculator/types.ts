@@ -4,6 +4,7 @@ export type Session = {
   rateId: string;
   startTime: Date;
   endTime: Date | null;
+  timezone: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -19,6 +20,7 @@ export type RatePricingElement = {
   id: string;
   rateId: string;
   components: RatePricingElementComponent[];
+  restrictions: RatePricingElementRestrictions;
 };
 
 export type RatePricingElementComponent = {
@@ -26,6 +28,30 @@ export type RatePricingElementComponent = {
   ratePricingElementId: string;
   type: "energy" | "flat" | "idle" | "time";
   value: number;
+};
+
+export type RatePricingElementRestrictions = {
+  startTime?: string;
+  endTime?: string;
+  startDate?: string;
+  endDate?: string;
+  minKwh?: number;
+  maxKwh?: number;
+  minCurrent?: number;
+  maxCurrent?: number;
+  minPower?: number;
+  maxPower?: number;
+  minDuration?: number;
+  maxDuration?: number;
+  dayOfWeek?: (
+    | "MONDAY"
+    | "TUESDAY"
+    | "WEDNESDAY"
+    | "THURSDAY"
+    | "FRIDAY"
+    | "SATURDAY"
+    | "SUNDAY"
+  )[];
 };
 
 export type EnergyReading = {

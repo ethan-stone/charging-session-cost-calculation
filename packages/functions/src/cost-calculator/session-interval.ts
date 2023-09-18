@@ -1,9 +1,11 @@
-import { ConnectorStatusEvent, EnergyReading } from ".";
+import { ConnectorStatusEvent, EnergyReading } from "./types";
 
 export type SessionInterval = {
   sessionId: string;
   type: "charging" | "idle";
   energyConsumed: number;
+  startEnergy: number;
+  endEnergy: number;
   startTime: Date;
   endTime: Date;
 };
@@ -36,6 +38,8 @@ export const getSessionChargingIntervals: GetSessionIntervals = (
         energyConsumed: nextReading.value - currentReading.value,
         startTime: currentReading.timestamp,
         endTime: nextReading.timestamp,
+        startEnergy: currentReading.value,
+        endEnergy: nextReading.value,
       });
     }
   }
@@ -82,6 +86,8 @@ export const getSessionIdleIntervals: GetSessionIntervals = (
           endTime: nextReading.timestamp,
           startTime: currentReading.timestamp,
           type: "idle",
+          endEnergy: nextReading.value,
+          startEnergy: currentReading.value,
         });
       }
     }
