@@ -159,7 +159,7 @@ export function getValidSessionIntervals(
 
     validSessionIntervals = newValidSessionIntervals;
     invalidSessionIntervals = invalidSessionIntervals.concat(
-      invalidSessionIntervals
+      newInvalidSessionIntervals
     );
   }
 
