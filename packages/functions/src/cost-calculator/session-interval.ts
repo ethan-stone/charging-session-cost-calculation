@@ -140,3 +140,38 @@ export function interpolateSessionIntervalsPerSecond(
 
   return interpolatedSessionIntervals;
 }
+
+export function getValidSessionIntervals(
+  sessionIntervals: SessionInterval[],
+  ...sessionIntervalValidators: SessionIntervalsValidator[]
+): {
+  validSessionIntervals: SessionInterval[];
+  invalidSessionIntervals: SessionInterval[];
+} {
+  let validSessionIntervals: SessionInterval[] = sessionIntervals;
+  let invalidSessionIntervals: SessionInterval[] = [];
+
+  for (const sessionIntervalValidator of sessionIntervalValidators) {
+    const {
+      validSessionIntervals: newValidSessionIntervals,
+      invalidSessionIntervals: newInvalidSessionIntervals,
+    } = sessionIntervalValidator(validSessionIntervals);
+
+    validSessionIntervals = newValidSessionIntervals;
+    invalidSessionIntervals = invalidSessionIntervals.concat(
+      invalidSessionIntervals
+    );
+  }
+
+  return {
+    validSessionIntervals,
+    invalidSessionIntervals,
+  };
+}
+
+export type SessionIntervalsValidator = (
+  sessionIntervals: SessionInterval[]
+) => {
+  validSessionIntervals: SessionInterval[];
+  invalidSessionIntervals: SessionInterval[];
+};
