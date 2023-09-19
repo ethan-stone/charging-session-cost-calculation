@@ -1,6 +1,6 @@
 export type Session = {
   id: string;
-  cost: number;
+  cost: number | null;
   rateId: string;
   startTime: Date;
   endTime: Date | null;

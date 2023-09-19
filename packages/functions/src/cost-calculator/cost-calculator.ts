@@ -280,5 +280,28 @@ export const energyCostCalculator: CostCalculator = (
   rate,
   sessionIntervals
 ) => {
-  return 0;
+  let total = 0;
+
+  for (const sessionInterval of sessionIntervals) {
+    const priceElementIdx = getPricingElementIdx(
+      session,
+      rate,
+      sessionInterval,
+      sessionIntervals
+    );
+
+    if (priceElementIdx === undefined) continue;
+
+    const pricingElement = rate.pricingElements[priceElementIdx];
+
+    const energyComponent = pricingElement.components.find(
+      (c) => c.type === "energy"
+    );
+
+    if (energyComponent === undefined) continue;
+
+    total += energyComponent.value * sessionInterval.energyConsumed;
+  }
+
+  return total;
 };
