@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   SessionInterval,
+  SessionIntervalsValidator,
   getSessionChargingIntervals,
   getSessionIdleIntervals,
+  getValidSessionIntervals,
   interpolateSessionIntervalsPerSecond,
 } from "./session-interval";
 import { ConnectorStatusEvent, EnergyReading } from "./types";
@@ -201,7 +203,7 @@ describe("getSessionIdleIntervals", () => {
 });
 
 describe("sliceSessionIntervalsPerSecond", () => {
-  it.todo("slice intervals correctly", () => {
+  it("slice intervals correctly", () => {
     const startTime = new Date("2021-01-01T00:00:00.000Z");
 
     const sessionIntervals: SessionInterval[] = [
@@ -237,6 +239,6 @@ describe("sliceSessionIntervalsPerSecond", () => {
     const interpolatedSessionIntervals =
       interpolateSessionIntervalsPerSecond(sessionIntervals);
 
-    expect(0).toEqual(0);
+    expect(interpolatedSessionIntervals.length).toEqual(180);
   });
 });

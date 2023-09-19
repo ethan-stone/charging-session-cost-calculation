@@ -175,3 +175,25 @@ export type SessionIntervalsValidator = (
   validSessionIntervals: SessionInterval[];
   invalidSessionIntervals: SessionInterval[];
 };
+
+export const createTooMuchEnergyConsumedValidator = (
+  maxEnergy: number
+): SessionIntervalsValidator => {
+  return function (sessionIntervals) {
+    const validSessionIntervals: SessionInterval[] = [];
+    const invalidSessionIntervals: SessionInterval[] = [];
+
+    for (const sessionInterval of sessionIntervals) {
+      if (sessionInterval.energyConsumed > maxEnergy) {
+        invalidSessionIntervals.push(sessionInterval);
+      } else {
+        validSessionIntervals.push(sessionInterval);
+      }
+    }
+
+    return {
+      validSessionIntervals,
+      invalidSessionIntervals,
+    };
+  };
+};
