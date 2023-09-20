@@ -168,7 +168,7 @@ describe("isValidPricingElement tests", () => {
 });
 
 describe("energyCostCalculator tests", () => {
-  it.todo(
+  it(
     "should work for simple rate with single element with no restrictions",
     () => {
       const startTime = new Date("2021-01-01T00:00:00.000Z");
