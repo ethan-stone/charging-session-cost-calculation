@@ -1,10 +1,5 @@
 import { SessionInterval } from "./session-interval";
-import {
-  Rate,
-  RatePricingElement,
-  RatePricingElementRestrictions,
-  Session,
-} from "./types";
+import { Rate, RatePricingElementRestrictions, Session } from "./types";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import dayjs from "dayjs";
@@ -72,15 +67,17 @@ function isValidStartTime(
 
   const hour = day.hour();
   const minute = day.minute();
+  const second = day.second();
 
   const [validStartHour, validStartMinute] = validStartTime.split(":");
   const validStartHourNumber = parseInt(validStartHour);
   const validStartMinuteNumber = parseInt(validStartMinute);
 
-  const timeInMinutes = hour * 60 + minute;
-  const validTimeInMinutes = validStartHourNumber * 60 + validStartMinuteNumber;
+  const timeInSeconds = 60 * (hour * 60 + minute) + second;
+  const validTimeInSeconds =
+    60 * (validStartHourNumber * 60 + validStartMinuteNumber);
 
-  return timeInMinutes >= validTimeInMinutes;
+  return timeInSeconds >= validTimeInSeconds;
 }
 
 /**
@@ -99,15 +96,17 @@ function isValidEndTime(
 
   const hour = day.hour();
   const minute = day.minute();
+  const second = day.minute();
 
   const [validEndHour, validEndMinute] = validEndTime.split(":");
   const validEndHourNumber = parseInt(validEndHour);
   const validEndMinuteNumber = parseInt(validEndMinute);
 
-  const timeInMinutes = hour * 60 + minute;
-  const validTimeInMinutes = validEndHourNumber * 60 + validEndMinuteNumber;
+  const timeInSeconds = 60 * (hour * 60 + minute) + second;
+  const validTimeInSeconds =
+    60 * (validEndHourNumber * 60 + validEndMinuteNumber);
 
-  return timeInMinutes <= validTimeInMinutes;
+  return timeInSeconds <= validTimeInSeconds;
 }
 
 /**
@@ -227,9 +226,6 @@ export function getPricingElementIdx(
 
   const firstSessionInterval = sessionIntervals[0];
 
-  let intervalStartPricingElementIdx: number | undefined;
-  let intervalEndPricingElementIdx: number | undefined;
-
   for (let i = 0; i < rate.pricingElements.length; i++) {
     const pricingElement = rate.pricingElements[i];
 
@@ -246,9 +242,6 @@ export function getPricingElementIdx(
       timezone: session.timezone,
     });
 
-    if (isValidPricingElementForIntervalStart)
-      intervalStartPricingElementIdx = i;
-
     const isValidPricingElementForIntervalEnd = isValidPricingElement({
       date: currentSessionInterval.endTime,
       duration:
@@ -260,19 +253,15 @@ export function getPricingElementIdx(
       timezone: session.timezone,
     });
 
-    if (isValidPricingElementForIntervalEnd) intervalEndPricingElementIdx = i;
+    if (
+      isValidPricingElementForIntervalStart &&
+      isValidPricingElementForIntervalEnd
+    ) {
+      return i;
+    }
   }
 
-  if (
-    intervalStartPricingElementIdx === undefined ||
-    intervalEndPricingElementIdx === undefined
-  )
-    return undefined;
-
-  if (intervalStartPricingElementIdx !== intervalEndPricingElementIdx)
-    return undefined;
-
-  return intervalStartPricingElementIdx;
+  return undefined;
 }
 
 export const energyCostCalculator: CostCalculator = (
@@ -290,7 +279,11 @@ export const energyCostCalculator: CostCalculator = (
       sessionIntervals
     );
 
-    if (priceElementIdx === undefined) continue;
+    // console.log(priceElementIdx);
+
+    if (priceElementIdx === undefined) {
+      continue;
+    }
 
     const pricingElement = rate.pricingElements[priceElementIdx];
 

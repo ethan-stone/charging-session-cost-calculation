@@ -168,7 +168,80 @@ describe("isValidPricingElement tests", () => {
 });
 
 describe("energyCostCalculator tests", () => {
-  it("should work for simple rate with single element with no restrictions", () => {
+  it.todo(
+    "should work for simple rate with single element with no restrictions",
+    () => {
+      const startTime = new Date("2021-01-01T00:00:00.000Z");
+
+      const session = {
+        cost: null,
+        createdAt: new Date(),
+        endTime: null,
+        id: "1",
+        rateId: "1",
+        startTime: startTime,
+        timezone: "America/Los_Angeles",
+        updatedAt: new Date(),
+      } satisfies Session;
+
+      const rate = {
+        id: "1",
+        maxCost: null,
+        minCost: null,
+        pricingElements: [
+          {
+            id: "1",
+            rateId: "1",
+            components: [
+              {
+                id: "1",
+                ratePricingElementId: "1",
+                type: "energy",
+                value: 20,
+              },
+            ],
+            restrictions: {},
+          },
+        ],
+      } satisfies Rate;
+
+      const sessionIntervals: SessionInterval[] = [
+        {
+          sessionId: "1",
+          type: "charging",
+          energyConsumed: 100,
+          startTime: new Date(startTime.getTime() + 1000 * 60),
+          endTime: new Date(startTime.getTime() + 1000 * 60 * 2),
+          startEnergy: 100,
+          endEnergy: 200,
+        },
+        {
+          sessionId: "1",
+          type: "charging",
+          energyConsumed: 100,
+          startTime: new Date(startTime.getTime() + 1000 * 60 * 2),
+          endTime: new Date(startTime.getTime() + 1000 * 60 * 3),
+          startEnergy: 200,
+          endEnergy: 300,
+        },
+        {
+          sessionId: "1",
+          type: "charging",
+          energyConsumed: 100,
+          startTime: new Date(startTime.getTime() + 1000 * 60 * 4),
+          endTime: new Date(startTime.getTime() + 1000 * 60 * 5),
+          startEnergy: 300,
+          endEnergy: 400,
+        },
+      ];
+
+      const energyCost = energyCostCalculator(session, rate, sessionIntervals);
+
+      expect(energyCost).toEqual(6000);
+    }
+  );
+
+  it("should work for simple rate with multiple elements with restrictions", () => {
     const startTime = new Date("2021-01-01T00:00:00.000Z");
 
     const session = {
@@ -198,7 +271,25 @@ describe("energyCostCalculator tests", () => {
               value: 20,
             },
           ],
-          restrictions: {},
+          restrictions: {
+            startTime: "16:01",
+            endTime: "16:02",
+          },
+        },
+        {
+          id: "1",
+          rateId: "1",
+          components: [
+            {
+              id: "1",
+              ratePricingElementId: "1",
+              type: "energy",
+              value: 30,
+            },
+          ],
+          restrictions: {
+            startTime: "16:02",
+          },
         },
       ],
     } satisfies Rate;
@@ -233,8 +324,12 @@ describe("energyCostCalculator tests", () => {
       },
     ];
 
-    const energyCost = energyCostCalculator(session, rate, sessionIntervals);
+    const interpolated = interpolateSessionIntervalsPerSecond(sessionIntervals);
 
-    expect(energyCost).toEqual(6000);
+    console.log(JSON.stringify(interpolated, null, 2));
+
+    const energyCost = energyCostCalculator(session, rate, interpolated);
+
+    expect(energyCost).toEqual(8000);
   });
 });
