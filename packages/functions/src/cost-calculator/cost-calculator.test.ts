@@ -326,7 +326,7 @@ describe("energyCostCalculator tests", () => {
 
     const interpolated = interpolateSessionIntervalsPerSecond(sessionIntervals);
 
-    console.log(JSON.stringify(interpolated, null, 2));
+    // console.log(JSON.stringify(interpolated, null, 2));
 
     const energyCost = energyCostCalculator(session, rate, interpolated);
 

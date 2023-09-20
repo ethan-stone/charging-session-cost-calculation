@@ -96,7 +96,7 @@ function isValidEndTime(
 
   const hour = day.hour();
   const minute = day.minute();
-  const second = day.minute();
+  const second = day.second();
 
   const [validEndHour, validEndMinute] = validEndTime.split(":");
   const validEndHourNumber = parseInt(validEndHour);
@@ -272,20 +272,18 @@ export const energyCostCalculator: CostCalculator = (
   let total = 0;
 
   for (const sessionInterval of sessionIntervals) {
-    const priceElementIdx = getPricingElementIdx(
+    const pricingElementIdx = getPricingElementIdx(
       session,
       rate,
       sessionInterval,
       sessionIntervals
     );
 
-    // console.log(priceElementIdx);
-
-    if (priceElementIdx === undefined) {
+    if (pricingElementIdx === undefined) {
       continue;
     }
 
-    const pricingElement = rate.pricingElements[priceElementIdx];
+    const pricingElement = rate.pricingElements[pricingElementIdx];
 
     const energyComponent = pricingElement.components.find(
       (c) => c.type === "energy"
@@ -296,5 +294,5 @@ export const energyCostCalculator: CostCalculator = (
     total += energyComponent.value * sessionInterval.energyConsumed;
   }
 
-  return total;
+  return Math.floor(total);
 };
