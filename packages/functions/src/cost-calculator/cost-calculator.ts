@@ -296,3 +296,38 @@ export const energyCostCalculator: CostCalculator = (
 
   return Math.floor(total);
 };
+
+export const idleCostCalculator: CostCalculator = (
+  session,
+  rate,
+  sessionIntervals
+) => {
+  let total = 0;
+
+  for (const sessionInterval of sessionIntervals) {
+    const pricingElementIdx = getPricingElementIdx(
+      session,
+      rate,
+      sessionInterval,
+      sessionIntervals
+    );
+
+    if (pricingElementIdx === undefined) {
+      continue;
+    }
+
+    const pricingElement = rate.pricingElements[pricingElementIdx];
+
+    const idleComponent = pricingElement.components.find(
+      (c) => c.type === "idle"
+    );
+
+    if (idleComponent === undefined) continue;
+
+    if (sessionInterval.type !== "idle") continue;
+
+    total += idleComponent.value * sessionInterval.duration;
+  }
+
+  return Math.floor(total);
+};

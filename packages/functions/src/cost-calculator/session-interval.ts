@@ -6,6 +6,7 @@ export type SessionInterval = {
   energyConsumed: number;
   startEnergy: number;
   endEnergy: number;
+  duration: number; // in seconds
   startTime: Date;
   endTime: Date;
 };
@@ -36,10 +37,14 @@ export const getSessionChargingIntervals: GetSessionIntervals = (
         sessionId: currentReading.sessionId,
         type: "charging",
         energyConsumed: nextReading.value - currentReading.value,
-        startTime: currentReading.timestamp,
-        endTime: nextReading.timestamp,
         startEnergy: currentReading.value,
         endEnergy: nextReading.value,
+        duration:
+          (nextReading.timestamp.getTime() -
+            currentReading.timestamp.getTime()) /
+          1000,
+        startTime: currentReading.timestamp,
+        endTime: nextReading.timestamp,
       });
     }
   }
@@ -85,6 +90,10 @@ export const getSessionIdleIntervals: GetSessionIntervals = (
           energyConsumed: 0,
           endTime: nextReading.timestamp,
           startTime: currentReading.timestamp,
+          duration:
+            (nextReading.timestamp.getTime() -
+              currentReading.timestamp.getTime()) /
+            1000,
           type: "idle",
           endEnergy: nextReading.value,
           startEnergy: currentReading.value,
@@ -134,6 +143,7 @@ export function interpolateSessionIntervalsPerSecond(
         endEnergy: newEndEnergy,
         startTime: new Date(interval.startTime.getTime() + j * 1000),
         endTime: new Date(interval.startTime.getTime() + (j + 1) * 1000),
+        duration: 1,
       });
     }
   }

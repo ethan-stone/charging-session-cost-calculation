@@ -75,6 +75,7 @@ describe("getSessionChargingIntervals tests", () => {
         endTime: new Date(startTime.getTime() + 1000 * 60 * 2),
         startEnergy: 100,
         endEnergy: 200,
+        duration: 60,
       },
       {
         sessionId: "1",
@@ -84,6 +85,7 @@ describe("getSessionChargingIntervals tests", () => {
         endTime: new Date(startTime.getTime() + 1000 * 60 * 3),
         startEnergy: 200,
         endEnergy: 300,
+        duration: 60,
       },
       {
         sessionId: "1",
@@ -93,6 +95,7 @@ describe("getSessionChargingIntervals tests", () => {
         endTime: new Date(startTime.getTime() + 1000 * 60 * 5),
         startEnergy: 300,
         endEnergy: 400,
+        duration: 60,
       },
     ]);
   });
@@ -188,6 +191,7 @@ describe("getSessionIdleIntervals", () => {
         endTime: new Date(startTime.getTime() + 1000 * 60 * 4),
         startEnergy: 300,
         endEnergy: 300,
+        duration: 60,
       },
       {
         sessionId: "1",
@@ -197,6 +201,7 @@ describe("getSessionIdleIntervals", () => {
         endTime: new Date(startTime.getTime() + 1000 * 60 * 6),
         startEnergy: 400,
         endEnergy: 400,
+        duration: 60,
       },
     ]);
   });
@@ -215,6 +220,7 @@ describe("sliceSessionIntervalsPerSecond", () => {
         endTime: new Date(startTime.getTime() + 1000 * 60 * 2),
         startEnergy: 100,
         endEnergy: 200,
+        duration: 60,
       },
       {
         sessionId: "1",
@@ -224,6 +230,7 @@ describe("sliceSessionIntervalsPerSecond", () => {
         endTime: new Date(startTime.getTime() + 1000 * 60 * 3),
         startEnergy: 200,
         endEnergy: 300,
+        duration: 60,
       },
       {
         sessionId: "1",
@@ -233,6 +240,7 @@ describe("sliceSessionIntervalsPerSecond", () => {
         endTime: new Date(startTime.getTime() + 1000 * 60 * 5),
         startEnergy: 300,
         endEnergy: 400,
+        duration: 60,
       },
     ];
 
