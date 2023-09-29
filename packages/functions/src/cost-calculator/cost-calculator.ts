@@ -331,3 +331,55 @@ export const idleCostCalculator: CostCalculator = (
 
   return Math.floor(total);
 };
+
+/**
+ * creates a cost calculator to calculate the cost of the idle time during the grace period
+ * @param gracePeriod the amount of desired grace period in seconds
+ * @returns a cost calculator
+ */
+export const createGracePeriodCostCalculator = (
+  gracePeriod: number
+): CostCalculator => {
+  return (session, rate, sessionIntervals) => {
+    let total = 0;
+    let currentIdlePeriodDuration = 0;
+
+    for (const sessionInterval of sessionIntervals) {
+      const pricingElementIdx = getPricingElementIdx(
+        session,
+        rate,
+        sessionInterval,
+        sessionIntervals
+      );
+
+      if (pricingElementIdx === undefined) {
+        continue;
+      }
+
+      const pricingElement = rate.pricingElements[pricingElementIdx];
+
+      const idleComponent = pricingElement.components.find(
+        (c) => c.type === "idle"
+      );
+
+      if (idleComponent === undefined) continue;
+
+      // if the session interval is not idle, reset the idle period duration
+      if (sessionInterval.type !== "idle") {
+        currentIdlePeriodDuration = 0;
+        continue;
+      }
+
+      // we only want to add to the grace period cost if the idle period duration is less than the grace period
+      if (currentIdlePeriodDuration >= gracePeriod) {
+        continue;
+      }
+
+      currentIdlePeriodDuration += sessionInterval.duration;
+
+      total += idleComponent.value * sessionInterval.duration;
+    }
+
+    return Math.floor(total);
+  };
+};
