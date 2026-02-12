@@ -1,3 +1,5 @@
+import { Effect } from "effect";
+import { InsufficientDataError } from "./errors";
 import { ConnectorStatusEvent, EnergyReading } from "./types";
 
 export type SessionInterval = {
@@ -14,170 +16,184 @@ export type SessionInterval = {
 type GetSessionIntervals = (
   energyReadings: EnergyReading[],
   connectorStatusEvents: ConnectorStatusEvent[]
-) => SessionInterval[];
+) => Effect.Effect<SessionInterval[], InsufficientDataError>;
 
 export const getSessionChargingIntervals: GetSessionIntervals = (
   energyReadings,
   connectorStatusEvents
-) => {
-  if (energyReadings.length === 0 || connectorStatusEvents.length === 0) {
-    return [];
-  }
-
-  const chargingIntervals: SessionInterval[] = [];
-
-  for (let i = 0; i < energyReadings.length; i++) {
-    if (i === energyReadings.length - 1) continue; // we can't compare the last reading to the next reading
-
-    const currentReading = energyReadings[i];
-    const nextReading = energyReadings[i + 1];
-
-    if (currentReading.value < nextReading.value) {
-      chargingIntervals.push({
-        sessionId: currentReading.sessionId,
-        type: "charging",
-        energyConsumed: nextReading.value - currentReading.value,
-        startEnergy: currentReading.value,
-        endEnergy: nextReading.value,
-        duration:
-          (nextReading.timestamp.getTime() -
-            currentReading.timestamp.getTime()) /
-          1000,
-        startTime: currentReading.timestamp,
-        endTime: nextReading.timestamp,
-      });
-    }
-  }
-
-  return chargingIntervals;
-};
-
-export const getSessionIdleIntervals: GetSessionIntervals = (
-  energyReadings,
-  connectorStatusEvents
-) => {
-  if (energyReadings.length === 0 || connectorStatusEvents.length === 0) {
-    return [];
-  }
-
-  const idleIntervals: SessionInterval[] = [];
-
-  for (let i = 0; i < energyReadings.length; i++) {
-    if (i === energyReadings.length - 1) continue; // we can't compare the last reading to the next reading
-
-    const currentReading = energyReadings[i];
-    const nextReading = energyReadings[i + 1];
-
-    if (currentReading.value === nextReading.value) {
-      const connectorStatusesBeforeCurrentReading = connectorStatusEvents
-        .filter((c) => {
-          return c.timestamp < currentReading.timestamp;
+) =>
+  Effect.gen(function* () {
+    if (energyReadings.length === 0 || connectorStatusEvents.length === 0) {
+      return yield* Effect.fail(
+        new InsufficientDataError({
+          sessionId: energyReadings[0]?.sessionId ?? "unknown",
+          reason: "No energy readings or connector status events",
         })
-        .sort((a, b) => {
-          if (a.timestamp > b.timestamp) return 1;
-          if (a.timestamp < b.timestamp) return -1;
-          return 0;
-        });
+      );
+    }
 
-      const mostRecentConnectorStatusBeforeCurrentReading =
-        connectorStatusesBeforeCurrentReading[
-          connectorStatusesBeforeCurrentReading.length - 1
-        ];
+    const chargingIntervals: SessionInterval[] = [];
 
-      if (mostRecentConnectorStatusBeforeCurrentReading.status === "idle") {
-        idleIntervals.push({
+    for (let i = 0; i < energyReadings.length; i++) {
+      if (i === energyReadings.length - 1) continue; // we can't compare the last reading to the next reading
+
+      const currentReading = energyReadings[i];
+      const nextReading = energyReadings[i + 1];
+
+      if (currentReading.value < nextReading.value) {
+        chargingIntervals.push({
           sessionId: currentReading.sessionId,
-          energyConsumed: 0,
-          endTime: nextReading.timestamp,
-          startTime: currentReading.timestamp,
+          type: "charging",
+          energyConsumed: nextReading.value - currentReading.value,
+          startEnergy: currentReading.value,
+          endEnergy: nextReading.value,
           duration:
             (nextReading.timestamp.getTime() -
               currentReading.timestamp.getTime()) /
             1000,
-          type: "idle",
-          endEnergy: nextReading.value,
-          startEnergy: currentReading.value,
+          startTime: currentReading.timestamp,
+          endTime: nextReading.timestamp,
         });
       }
     }
-  }
 
-  return idleIntervals;
-};
+    return chargingIntervals;
+  });
+
+export const getSessionIdleIntervals: GetSessionIntervals = (
+  energyReadings,
+  connectorStatusEvents
+) =>
+  Effect.gen(function* () {
+    if (energyReadings.length === 0 || connectorStatusEvents.length === 0) {
+      return yield* Effect.fail(
+        new InsufficientDataError({
+          sessionId: energyReadings[0]?.sessionId ?? "unknown",
+          reason: "No energy readings or connector status events",
+        })
+      );
+    }
+
+    const idleIntervals: SessionInterval[] = [];
+
+    for (let i = 0; i < energyReadings.length; i++) {
+      if (i === energyReadings.length - 1) continue; // we can't compare the last reading to the next reading
+
+      const currentReading = energyReadings[i];
+      const nextReading = energyReadings[i + 1];
+
+      if (currentReading.value === nextReading.value) {
+        const connectorStatusesBeforeCurrentReading = connectorStatusEvents
+          .filter((c) => {
+            return c.timestamp < currentReading.timestamp;
+          })
+          .sort((a, b) => {
+            if (a.timestamp > b.timestamp) return 1;
+            if (a.timestamp < b.timestamp) return -1;
+            return 0;
+          });
+
+        const mostRecentConnectorStatusBeforeCurrentReading =
+          connectorStatusesBeforeCurrentReading[
+            connectorStatusesBeforeCurrentReading.length - 1
+          ];
+
+        if (mostRecentConnectorStatusBeforeCurrentReading.status === "idle") {
+          idleIntervals.push({
+            sessionId: currentReading.sessionId,
+            energyConsumed: 0,
+            endTime: nextReading.timestamp,
+            startTime: currentReading.timestamp,
+            duration:
+              (nextReading.timestamp.getTime() -
+                currentReading.timestamp.getTime()) /
+              1000,
+            type: "idle",
+            endEnergy: nextReading.value,
+            startEnergy: currentReading.value,
+          });
+        }
+      }
+    }
+
+    return idleIntervals;
+  });
 
 function lerp(start: number, end: number, t: number): number {
   return start * (1 - t) + end * t;
 }
 
-export function interpolateSessionIntervalsPerSecond(
+export const interpolateSessionIntervalsPerSecond = (
   sessionIntervals: SessionInterval[]
-): SessionInterval[] {
-  const interpolatedSessionIntervals: SessionInterval[] = [];
+): Effect.Effect<SessionInterval[]> =>
+  Effect.sync(() => {
+    const interpolatedSessionIntervals: SessionInterval[] = [];
 
-  for (let i = 0; i < sessionIntervals.length; i++) {
-    const interval = sessionIntervals[i];
+    for (let i = 0; i < sessionIntervals.length; i++) {
+      const interval = sessionIntervals[i];
 
-    const diffInSeconds =
-      (interval.endTime.getTime() - interval.startTime.getTime()) / 1000;
+      const diffInSeconds =
+        (interval.endTime.getTime() - interval.startTime.getTime()) / 1000;
 
-    const t = 1 / diffInSeconds;
+      const t = 1 / diffInSeconds;
 
-    for (let j = 0; j < diffInSeconds; j++) {
-      const newStartEnergy = lerp(
-        interval.startEnergy,
-        interval.endEnergy,
-        j * t
-      );
+      for (let j = 0; j < diffInSeconds; j++) {
+        const newStartEnergy = lerp(
+          interval.startEnergy,
+          interval.endEnergy,
+          j * t
+        );
 
-      const newEndEnergy = lerp(
-        interval.startEnergy,
-        interval.endEnergy,
-        (j + 1) * t
-      );
+        const newEndEnergy = lerp(
+          interval.startEnergy,
+          interval.endEnergy,
+          (j + 1) * t
+        );
 
-      interpolatedSessionIntervals.push({
-        sessionId: interval.sessionId,
-        type: interval.type,
-        energyConsumed: newEndEnergy - newStartEnergy,
-        startEnergy: newStartEnergy,
-        endEnergy: newEndEnergy,
-        startTime: new Date(interval.startTime.getTime() + j * 1000),
-        endTime: new Date(interval.startTime.getTime() + (j + 1) * 1000),
-        duration: 1,
-      });
+        interpolatedSessionIntervals.push({
+          sessionId: interval.sessionId,
+          type: interval.type,
+          energyConsumed: newEndEnergy - newStartEnergy,
+          startEnergy: newStartEnergy,
+          endEnergy: newEndEnergy,
+          startTime: new Date(interval.startTime.getTime() + j * 1000),
+          endTime: new Date(interval.startTime.getTime() + (j + 1) * 1000),
+          duration: 1,
+        });
+      }
     }
-  }
 
-  return interpolatedSessionIntervals;
-}
+    return interpolatedSessionIntervals;
+  });
 
-export function getValidSessionIntervals(
+export const getValidSessionIntervals = (
   sessionIntervals: SessionInterval[],
   ...sessionIntervalValidators: SessionIntervalsValidator[]
-): {
+): Effect.Effect<{
   validSessionIntervals: SessionInterval[];
   invalidSessionIntervals: SessionInterval[];
-} {
-  let validSessionIntervals: SessionInterval[] = sessionIntervals;
-  let invalidSessionIntervals: SessionInterval[] = [];
+}> =>
+  Effect.sync(() => {
+    let validSessionIntervals: SessionInterval[] = sessionIntervals;
+    let invalidSessionIntervals: SessionInterval[] = [];
 
-  for (const sessionIntervalValidator of sessionIntervalValidators) {
-    const {
-      validSessionIntervals: newValidSessionIntervals,
-      invalidSessionIntervals: newInvalidSessionIntervals,
-    } = sessionIntervalValidator(validSessionIntervals);
+    for (const sessionIntervalValidator of sessionIntervalValidators) {
+      const {
+        validSessionIntervals: newValidSessionIntervals,
+        invalidSessionIntervals: newInvalidSessionIntervals,
+      } = sessionIntervalValidator(validSessionIntervals);
 
-    validSessionIntervals = newValidSessionIntervals;
-    invalidSessionIntervals = invalidSessionIntervals.concat(
-      newInvalidSessionIntervals
-    );
-  }
+      validSessionIntervals = newValidSessionIntervals;
+      invalidSessionIntervals = invalidSessionIntervals.concat(
+        newInvalidSessionIntervals
+      );
+    }
 
-  return {
-    validSessionIntervals,
-    invalidSessionIntervals,
-  };
-}
+    return {
+      validSessionIntervals,
+      invalidSessionIntervals,
+    };
+  });
 
 export type SessionIntervalsValidator = (
   sessionIntervals: SessionInterval[]

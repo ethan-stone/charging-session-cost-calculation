@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Effect } from "effect";
 
 import { energyCostCalculator, isValidPricingElement } from "./cost-calculator";
 import { Rate, Session } from "./types";
@@ -236,7 +237,9 @@ describe("energyCostCalculator tests", () => {
       },
     ];
 
-    const energyCost = energyCostCalculator(session, rate, sessionIntervals);
+    const energyCost = Effect.runSync(
+      energyCostCalculator(session, rate, sessionIntervals)
+    );
 
     expect(energyCost).toEqual(6000);
   });
@@ -327,11 +330,13 @@ describe("energyCostCalculator tests", () => {
       },
     ];
 
-    const interpolated = interpolateSessionIntervalsPerSecond(sessionIntervals);
+    const interpolated = Effect.runSync(
+      interpolateSessionIntervalsPerSecond(sessionIntervals)
+    );
 
-    // console.log(JSON.stringify(interpolated, null, 2));
-
-    const energyCost = energyCostCalculator(session, rate, interpolated);
+    const energyCost = Effect.runSync(
+      energyCostCalculator(session, rate, interpolated)
+    );
 
     expect(energyCost).toEqual(8000);
   });

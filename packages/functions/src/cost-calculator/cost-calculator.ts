@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { SessionInterval } from "./session-interval";
 import { Rate, RatePricingElementRestrictions, Session } from "./types";
 import utc from "dayjs/plugin/utc";
@@ -11,7 +12,7 @@ export type CostCalculator = (
   session: Session,
   rate: Rate,
   sessionIntervals: SessionInterval[]
-) => number;
+) => Effect.Effect<number>;
 
 const DayOfWeekToNumber = {
   SUNDAY: 0,
@@ -268,81 +269,43 @@ export const energyCostCalculator: CostCalculator = (
   session,
   rate,
   sessionIntervals
-) => {
-  let total = 0;
+) =>
+  Effect.sync(() => {
+    let total = 0;
 
-  for (const sessionInterval of sessionIntervals) {
-    const pricingElementIdx = getPricingElementIdx(
-      session,
-      rate,
-      sessionInterval,
-      sessionIntervals
-    );
+    for (const sessionInterval of sessionIntervals) {
+      const pricingElementIdx = getPricingElementIdx(
+        session,
+        rate,
+        sessionInterval,
+        sessionIntervals
+      );
 
-    if (pricingElementIdx === undefined) {
-      continue;
+      if (pricingElementIdx === undefined) {
+        continue;
+      }
+
+      const pricingElement = rate.pricingElements[pricingElementIdx];
+
+      const energyComponent = pricingElement.components.find(
+        (c) => c.type === "energy"
+      );
+
+      if (energyComponent === undefined) continue;
+
+      total += energyComponent.value * sessionInterval.energyConsumed;
     }
 
-    const pricingElement = rate.pricingElements[pricingElementIdx];
-
-    const energyComponent = pricingElement.components.find(
-      (c) => c.type === "energy"
-    );
-
-    if (energyComponent === undefined) continue;
-
-    total += energyComponent.value * sessionInterval.energyConsumed;
-  }
-
-  return Math.floor(total);
-};
+    return Math.floor(total);
+  });
 
 export const idleCostCalculator: CostCalculator = (
   session,
   rate,
   sessionIntervals
-) => {
-  let total = 0;
-
-  for (const sessionInterval of sessionIntervals) {
-    const pricingElementIdx = getPricingElementIdx(
-      session,
-      rate,
-      sessionInterval,
-      sessionIntervals
-    );
-
-    if (pricingElementIdx === undefined) {
-      continue;
-    }
-
-    const pricingElement = rate.pricingElements[pricingElementIdx];
-
-    const idleComponent = pricingElement.components.find(
-      (c) => c.type === "idle"
-    );
-
-    if (idleComponent === undefined) continue;
-
-    if (sessionInterval.type !== "idle") continue;
-
-    total += idleComponent.value * sessionInterval.duration;
-  }
-
-  return Math.floor(total);
-};
-
-/**
- * creates a cost calculator to calculate the cost of the idle time during the grace period
- * @param gracePeriod the amount of desired grace period in seconds
- * @returns a cost calculator
- */
-export const createGracePeriodCostCalculator = (
-  gracePeriod: number
-): CostCalculator => {
-  return (session, rate, sessionIntervals) => {
+) =>
+  Effect.sync(() => {
     let total = 0;
-    let currentIdlePeriodDuration = 0;
 
     for (const sessionInterval of sessionIntervals) {
       const pricingElementIdx = getPricingElementIdx(
@@ -364,22 +327,63 @@ export const createGracePeriodCostCalculator = (
 
       if (idleComponent === undefined) continue;
 
-      // if the session interval is not idle, reset the idle period duration
-      if (sessionInterval.type !== "idle") {
-        currentIdlePeriodDuration = 0;
-        continue;
-      }
-
-      // we only want to add to the grace period cost if the idle period duration is less than the grace period
-      if (currentIdlePeriodDuration >= gracePeriod) {
-        continue;
-      }
-
-      currentIdlePeriodDuration += sessionInterval.duration;
+      if (sessionInterval.type !== "idle") continue;
 
       total += idleComponent.value * sessionInterval.duration;
     }
 
     return Math.floor(total);
-  };
+  });
+
+/**
+ * creates a cost calculator to calculate the cost of the idle time during the grace period
+ * @param gracePeriod the amount of desired grace period in seconds
+ * @returns a cost calculator
+ */
+export const createGracePeriodCostCalculator = (
+  gracePeriod: number
+): CostCalculator => {
+  return (session, rate, sessionIntervals) =>
+    Effect.sync(() => {
+      let total = 0;
+      let currentIdlePeriodDuration = 0;
+
+      for (const sessionInterval of sessionIntervals) {
+        const pricingElementIdx = getPricingElementIdx(
+          session,
+          rate,
+          sessionInterval,
+          sessionIntervals
+        );
+
+        if (pricingElementIdx === undefined) {
+          continue;
+        }
+
+        const pricingElement = rate.pricingElements[pricingElementIdx];
+
+        const idleComponent = pricingElement.components.find(
+          (c) => c.type === "idle"
+        );
+
+        if (idleComponent === undefined) continue;
+
+        // if the session interval is not idle, reset the idle period duration
+        if (sessionInterval.type !== "idle") {
+          currentIdlePeriodDuration = 0;
+          continue;
+        }
+
+        // we only want to add to the grace period cost if the idle period duration is less than the grace period
+        if (currentIdlePeriodDuration >= gracePeriod) {
+          continue;
+        }
+
+        currentIdlePeriodDuration += sessionInterval.duration;
+
+        total += idleComponent.value * sessionInterval.duration;
+      }
+
+      return Math.floor(total);
+    });
 };

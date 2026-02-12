@@ -18,5 +18,8 @@
     "@tsconfig/node22": "^22.0.2",
     "sst": "3",
     "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "effect": "^3.19.16"
   }
 }
